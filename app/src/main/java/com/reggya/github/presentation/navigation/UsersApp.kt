@@ -11,6 +11,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -32,32 +33,35 @@ fun UsersApp(
 ) {
 	val navController = rememberNavController()
 	val usersFavoriteViewModel: UsersFavoriteViewModel = hiltViewModel()
+	val navBackStackEntry by navController.currentBackStackEntryAsState()
+	val currentDestination = navBackStackEntry?.destination
+	
+	val showBottomBar = currentDestination?.route?.startsWith("detail/") != true
+	
 	Scaffold(
 		bottomBar = {
-			NavigationBar {
-				val navBackStackEntry by navController.currentBackStackEntryAsState()
-				val currentDestination = navBackStackEntry?.destination
-				
-				val items = listOf(
-					NavigationItem("home", "Home", Icons.Default.Home),
-					NavigationItem("favorites", "Favorites", Icons.Default.Favorite)
-				)
-				
-				items.forEach { item ->
-					NavigationBarItem(
-						icon = { Icon(item.icon, contentDescription = item.label) },
-						label = { Text(item.label) },
-						selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
-						onClick = {
-							navController.navigate(item.route) {
-								popUpTo(navController.graph.findStartDestination().id) {
-									saveState = true
-								}
-								launchSingleTop = true
-								restoreState = true
-							}
-						}
+			if (showBottomBar) {
+				NavigationBar {
+					val items = listOf(
+						NavigationItem("home", "Home", Icons.Default.Home),
+						NavigationItem("favorites", "Favorites", Icons.Default.Favorite)
 					)
+					items.forEach { item ->
+						NavigationBarItem(
+							icon = { Icon(item.icon, contentDescription = item.label) },
+							label = { Text(item.label) },
+							selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
+							onClick = {
+								navController.navigate(item.route) {
+									popUpTo(navController.graph.findStartDestination().id) {
+										saveState = true
+									}
+									launchSingleTop = true
+									restoreState = true
+								}
+							}
+						)
+					}
 				}
 			}
 		}
@@ -70,19 +74,26 @@ fun UsersApp(
 				.padding(innerPadding)
 		) {
 			composable("home") {
-				HomeScreen()
+				HomeScreen(
+					onNavigateToDetail = { username, userId ->
+						navController.navigate("detail/$username/$userId")
+					}
+				)
 			}
 			composable("favorites") {
-				FavoriteScreen()
+				FavoriteScreen(
+					onNavigateToDetail = { username, userId ->
+						navController.navigate("detail/$username/$userId")
+					}
+				)
 			}
 			composable("detail/{username}/{userId}") { backStackEntry ->
 				val username = backStackEntry.arguments?.getString("username") ?: ""
 				val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
-				if (userId != null) usersFavoriteViewModel.getFavoriteUserById(userId)
-				val user = usersFavoriteViewModel.detailFavoriteUser.collectAsState().value
 				DetailScreen(
+					userId = userId,
 					username = username,
-					user = user
+					onNavigateBack = {navController.popBackStack()}
 				)
 			}
 		}

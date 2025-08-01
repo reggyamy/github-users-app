@@ -39,7 +39,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.reggya.github.domain.model.GitHubUserDetail
 import com.reggya.github.domain.model.Resource
@@ -49,30 +48,41 @@ import com.reggya.github.presentation.ui.screen.viewmodel.UsersSearchViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
-	user: GitHubUserDetail? = null,
-	username: String
+	userId: Int? = null,
+	username: String,
+	onNavigateBack: () -> Unit
 ) {
-	val navController = rememberNavController()
+	
 	val usersSearchViewModel: UsersSearchViewModel = hiltViewModel()
 	val usersFavoriteViewModel: UsersFavoriteViewModel = hiltViewModel()
 	var isFavorite by remember {  mutableStateOf(false) }
-	val userDetailResource by usersSearchViewModel.userDetail.collectAsStateWithLifecycle()
-	var userDetail by remember { mutableStateOf(user) }
+	val userDetailResponse by usersSearchViewModel.userDetail.collectAsStateWithLifecycle()
+	val favoriteUserDetail by usersFavoriteViewModel.detailFavoriteUser.collectAsStateWithLifecycle()
+	var userDetail by remember { mutableStateOf(favoriteUserDetail) }
+	
+	LaunchedEffect(userId) {
+		if (userId != null) {
+			usersFavoriteViewModel.getFavoriteUserById(userId)
+		}
+	}
 	
 	LaunchedEffect(username){
 		if (userDetail != null) return@LaunchedEffect
 		usersSearchViewModel.getUserDetail(username)
 	}
 	
-	LaunchedEffect(userDetailResource) {
-		if (userDetailResource is Resource.Success) {
-			userDetail = (userDetailResource as Resource.Success<GitHubUserDetail>).data
+	LaunchedEffect(userDetailResponse) {
+		if (userDetailResponse is Resource.Success) {
+			userDetail = (userDetailResponse as Resource.Success<GitHubUserDetail>).data
 		}
 	}
 	
 	LaunchedEffect(userDetail) {
 		usersFavoriteViewModel.getFavoriteUserById(userDetail?.id ?: 0)
-		isFavorite = usersFavoriteViewModel.detailFavoriteUser.value != null
+	}
+	
+	LaunchedEffect(favoriteUserDetail) {
+		isFavorite = favoriteUserDetail != null
 	}
 	
 	Scaffold(
@@ -80,7 +90,7 @@ fun DetailScreen(
 			TopAppBar(
 				title = { Text("Detail User") },
 				navigationIcon = {
-					IconButton(onClick = {navController.popBackStack()}) {
+					IconButton(onClick = {onNavigateBack()}) {
 						Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
 					}
 				},

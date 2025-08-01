@@ -52,7 +52,9 @@ import com.reggya.github.presentation.ui.screen.viewmodel.UsersSearchViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+	onNavigateToDetail: (String, String) -> Unit
+) {
 	val navController = rememberNavController()
 	val usersSearchViewModel: UsersSearchViewModel = hiltViewModel()
 	var query by remember { mutableStateOf("") }
@@ -123,7 +125,7 @@ fun HomeScreen() {
 						UserListItem(
 							user = it,
 							onClick = { userId ->
-								navController.navigate("detail/${it.login}/${userId}")
+								onNavigateToDetail(it.login, userId.toString())
 							}
 						)
 					}
