@@ -2,10 +2,10 @@ plugins {
 	alias(libs.plugins.android.application)
 	alias(libs.plugins.kotlin.android)
 	alias(libs.plugins.kotlin.compose)
+	alias(libs.plugins.ksp)
 	alias(libs.plugins.kotlin.kapt)
 	alias(libs.plugins.parcelize)
-	alias(libs.plugins.ksp)
-	alias(libs.plugins.hilt.android) apply false
+	alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -33,11 +33,11 @@ android {
 		}
 	}
 	compileOptions {
-		sourceCompatibility = JavaVersion.VERSION_11
-		targetCompatibility = JavaVersion.VERSION_11
+		sourceCompatibility = JavaVersion.VERSION_17
+		targetCompatibility = JavaVersion.VERSION_17
 	}
 	kotlinOptions {
-		jvmTarget = "11"
+		jvmTarget = "17"
 	}
 	buildFeatures {
 		compose = true
@@ -74,16 +74,14 @@ dependencies {
 	
 	//Dagger Hilt
 	implementation (libs.hilt.android)
-	kapt (libs.hilt.compiler)
+	ksp (libs.hilt.compiler)
 	
 	//Pagination
 	implementation(libs.androidx.paging.compose)
 	implementation (libs.androidx.paging.runtime)
 	
 	//room
-	implementation(libs.androidx.room.runtime)
-	annotationProcessor(libs.androidx.room.compiler)
-	ksp(libs.androidx.room.compiler.v252)
+	ksp(libs.androidx.room.compiler)
 	implementation(libs.androidx.room.ktx)
 	
 	//ViewModel
@@ -95,5 +93,14 @@ dependencies {
 	debugImplementation(libs.chucker)
 	releaseImplementation(libs.chucker.no.op)
 	
+	//M3
+	implementation(libs.androidx.material.icons.extended)
+	
 	implementation(libs.coil.compose)
+}
+
+configurations.all {
+	resolutionStrategy {
+		force(libs.javapoet)
+	}
 }
